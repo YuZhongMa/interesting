@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<head>
+<title></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css" src="./images/reset.css"></style>
+</head>
+<style type="text/css">
+</style>
+<script type="text/javascript">
+window.onload = function(){
+		var x = 0;
+		var oImg = document.getElementsByTagName('img')[0];
+		var aImg = document.getElementsByTagName('img');
+		var previmg = oImg;
+			for(var i = 0;i<77;i++){
+			var aNew = document.createElement('img');
+			aNew.src  ='./img/miaov ('+i+').jpg'
+			aNew.style.display = 'none';
+			document.body.appendChild(aNew);
+		}
+	document.onmousedown = function(ev){
+
+		var ev = ev||event;
+		var disX = ev.clientX - x;
+		document.onmousemove = function(ev){
+			var ev = ev||event;
+			x = ev.clientX - disX;
+			x= parseInt(-x/5);
+			if(x<0){
+				x = x-Math.floor(x/77)*77;
+			}
+			else{
+				x= x%77
+			}
+
+			document.title = x;
+			if(previmg!=aImg[x]){
+			previmg.style.display = 'none';
+			aImg[x].style.display = 'block';
+			previmg = aImg[x];
+			}
+			// aImg.src = './img/miaov ('+x%77+').jpg';
+		}
+		document.onmouseup = function(){
+			document.onmousemove =document.onmouseup = null;
+		}
+		return false
+	}
+
+}
+</script>
+<body>
+<div id = "div1">
+		<img src="./img/miaov (0).jpg">
+</div>
+</body>
+</html>    
