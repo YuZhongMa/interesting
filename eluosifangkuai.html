@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  *{margin:0;padding:0;}
+  body{overflow:hidden;}
+  canvas{display:block;border:1px solid #ccc;margin:10px auto;}
+  input[type='button']{width:100px;height:30px;line-height:30px;cursor:pointer;}
+</style>
+</head>
+<body>
+<canvas id="canvas1" width="450" height="600">您的浏览器不支持HTML5</canvas>
+<div style="height:50px;text-align:center;line-height:50px;">
+  <input id="stop" type="button" value="开始" >
+  <input id="restart" type="button" value="重新开始" style="display:none;float:right;margin-top:10px;" >
+</div>
+<script>
+window.onload = function(){
+  var cvs = document.getElementById('canvas1');
+  var ctx = cvs.getContext("2d");
+  
+  var contarr = [];//主要数组
+  var nowrect = [];//正在运动的方块
+  var nextrect = [];//下一个方块
+  var num = 0;//分数
+  var timeline;//计时器
+  var stop = true;//是否暂停
+  var speed = 400;//速度 / 毫秒
+  var createRect = [[
+      [0,0,0,0],
+      [0,0,0,0],
+      [1,1,1,1],
+      [0,0,0,0]
+    ],[
+      [0,0,0,0],
+      [0,1,1,0],
+      [0,1,1,0],
+      [0,0,0,0]
+    ],[
+      [0,0,0,0],
+      [1,1,1,0],
+      [0,1,0,0],
+      [0,0,0,0]
+    ],[
+      [0,1,1,0],
+      [0,1,0,0],
+      [0,1,0,0],
+      [0,0,0,0]
+    ],[
+      [0,1,1,0],
+      [0,0,1,0],
+      [0,0,1,0],
+      [0,0,0,0]
+    ],[
+      [0,1,0,0],
+      [0,1,1,0],
+      [0,0,1,0],
+      [0,0,0,0]
+    ],[
+      [0,0,1,0],
+      [0,1,1,0],
+      [0,1,0,0],
+      [0,0,0,0]
+    ],[
+      [0,1,0,0],
+      [0,1,0,0],
+      [0,1,0,0],
+      [0,1,0,0]
+    ]];
+  //初始化
+  init();
+  function init(){
+    contarr = [];
+    nowrect = [];
+    nextrect = [];
+    num = 0;
+    timeline = null;
+    stop = true;
+    //添加背景
+    ctx.fillStyle = "#000000";
+    ctx.strokeStyle = "#ffffff";
+    ctx.fillRect(0,0,450,600);
+    ctx.clearRect(20,25,275,550);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "20px 黑体";
+    ctx.textAlign = "left";
+    ctx.fillText("下一个:",325,50,100);
+    ctx.clearRect(325,70,100,100);
+    ctx.fillText("得分:",325,260,100);
+    ctx.fillText("0",325,300,100);
+    ctx.strokeStyle = "#cccccc";
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "#3A70A3";
+    //填充主要数组
+    for(var i=0;i<22;i++){
+      var arr = [];
+      for(var j=0;j<11;j++){arr.push(0);};
+      contarr.push(arr);
+    }
+    contdraw();
+    rectdraw();
+    //暂停
+    document.getElementById("stop").onclick = function(){
+      document.getElementById("restart").style.display = 'block';
+      if(stop){
+        timeline = setInterval(function(){move(0,1);},speed);
+        this.value = "暂停";
+      }else{
+        clearInterval(timeline);
+        this.value = "开始";
+      }
+      stop = !stop;
+    }
+    //重新开始
+    document.getElementById("restart").onclick = function(){
+      clearInterval(timeline);
+      document.getElementById("stop").value = "开始";
+      init();
+    }
+    //键盘事件
+    document.onkeyup=function(event){
+      var e = event || window.event || arguments.callee.caller.arguments[0];
+      if(e && e.keyCode==37){//left
+        move(-1,0);
+      }else if(e && e.keyCode == 39){//right
+        move(1,0);
+      }else if(e && e.keyCode == 40){//down
+        move(0,1);
+      }else if(e && e.keyCode == 38){//up旋转
+        rotate();
+      }
+        }; 
+  };
+  //旋转
+  function rotate(){
+    //清除
+    for(var i=0;i<nowrect.length;i++){
+      for(var j=0;j<nowrect[i].length;j++){
+        if(nowrect[i][j]){
+          var px = 20+(j+nowrect.left)*25;
+          var py = 25+(i+nowrect.top)*25;
+          if(!(i+nowrect.top<0)){
+            contarr[i+nowrect.top][j+nowrect.left] = 0;
+          };            
+        }
+      }
+    }
+    //创建旋转后的形状
+    var rot = [];
+    var saver;
+    for(var i=0;i<nowrect.length;i++){rot.unshift([]);}
+    for(i=0;i<nowrect.length;i++){
+      for(var j=0;j<nowrect[i].length;j++){
+        rot[j].unshift(nowrect[i][j]);
+      }
+    }
+    rot.left = nowrect.left;
+    rot.top = nowrect.top;
+    saver = nowrect;
+    nowrect = rot;
+    //如果不可以旋转则nowrect不变
+    if(ifmove(0,0)!=1){nowrect = saver;}
+    for(i=0;i<nowrect.length;i++){
+      for(j=0;j<nowrect[i].length;j++){
+        if(i+nowrect.top<0){continue;}
+        if(nowrect[i][j]){
+          contarr[i+nowrect.top][j+nowrect.left] = 1;
+        }
+      }
+    }
+    contdraw();
+  }
+  //移动
+  function move(mx,my){
+    //清除数组中的当前方块
+    for(var i=0;i<nowrect.length;i++){
+      for(var j=0;j<nowrect[i].length;j++){
+        if(nowrect[i][j]){
+          var px = 20+(j+nowrect.left)*25;
+          var py = 25+(i+nowrect.top)*25;
+          if(!(i+nowrect.top<0)){
+            contarr[i+nowrect.top][j+nowrect.left] = 0;
+          };          
+        }
+      }
+    }
+    var state = ifmove(mx,my);
+    if(state){//如果可以移动则 top,left += my,mx
+      if(state !=2){
+        nowrect.top += my;
+        nowrect.left += mx;
+      }
+      for(i=0;i<nowrect.length;i++){
+        for(j=0;j<nowrect[i].length;j++){
+          if(i+nowrect.top<0){continue;}
+          if(nowrect[i][j]){
+            contarr[i+nowrect.top][j+nowrect.left] = 1;
+          }
+        }
+      }
+    }else{//否则数组添加原位置方块，判断消除和结束
+      for(i=0;i<nowrect.length;i++){
+        for(j=0;j<nowrect[i].length;j++){
+          if(i+nowrect.top<0){continue;}
+          if(nowrect[i][j]){
+            contarr[i+nowrect.top][j+nowrect.left] = 1;
+          }
+        }
+      }
+      var clr = [];
+      for(i=0;i<contarr.length;i++){
+        var boo = 0;
+        for(j=0;j<contarr[i].length;j++){
+          if(contarr[i][j]){boo++}
+        }
+        if(boo==11){
+          num += 100;fraction(num);
+          clr.push(i);
+        }
+      }
+      //消除
+      for(i=0;i<clr.length;i++){
+        var id = clr.length-i-1;
+        contarr.splice(clr[id],1);
+      }
+      for(i=0;i<clr.length;i++){
+        var n = [];
+        for(j=0;j<contarr[0].length;j++){n.push(0);}
+        contarr.unshift(n);
+      }
+      //游戏结束
+      for(i=0;i<contarr[0].length;i++){if(contarr[0][i]){alert("游戏结束");clearInterval(timeline);return false;}}
+      rectdraw();
+    }
+    contdraw();
+  }
+  //判断是否可以移动
+  function ifmove(mx,my){
+    var boo = 1;
+    for(var i=0;i<nowrect.length;i++){
+      for(var j=0;j<nowrect[i].length;j++){
+        if(nowrect[i][j]){
+          var px = j+nowrect.left+mx;
+          var py = i+nowrect.top+my;
+          if(px<0){return 2;}
+          if(px>10){return 2;}
+          if(py<0){continue;}
+          if(py>21){return 0;}
+          var fr = contarr[py][px];
+          if(fr!=0){
+            if(mx==0){return 0;}
+            if(my==0){return 2;}
+          }
+        }
+      }
+    }
+    // 0：往下不可移动，1：可以移动，2：左右不可移动
+    return boo;
+  }
+  //绘制窗口面板
+  function rectdraw(){
+    if(nextrect.length == 0){
+      nowrect = Box();
+    }else{
+      nowrect = nextrect;
+    }
+    nowrect.top = -4;
+    nowrect.left = 4;
+    nextrect = Box();
+    for(var i=0;i<nextrect.length;i++){
+      for(var j=0;j<nextrect[i].length;j++){
+        var wx = 325+(j*25);
+        var wy = 70+(i*25);
+        ctx.clearRect(wx,wy,25,25);
+        if(nextrect[i][j]){
+          ctx.strokeRect(wx,wy,25,25);
+          ctx.fillRect(wx+1,wy+1,23,23);
+        }else{
+          ctx.strokeRect(wx,wy,25,25);
+        }
+      }
+    }
+  }
+  //绘制主面板
+  function contdraw(){
+    for(var i=0;i<contarr.length;i++){
+      for(var j=0;j<contarr[i].length;j++){
+        var wx = 20+(j*25);
+        var wy = 25+(i*25);
+        ctx.clearRect(wx,wy,25,25);
+        if(contarr[i][j]){
+          ctx.fillRect(wx+1,wy+1,23,23);
+        }else{
+          ctx.strokeRect(wx,wy,25,25);
+        }
+      }
+    }
+  };
+  //修改分数
+  function fraction(num){
+    var fillcolor = ctx.fillStyle;
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(325,280,100,20);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(num,325,300,100);
+    ctx.fillStyle = fillcolor;
+  };
+  //返回随机形状
+  function Box(){
+    var len = createRect.length;
+    var rtvalue = createRect[parseInt(Math.random()*len)];
+    return rtvalue;
+  }
+}
+</script>
+</body>
+</html>

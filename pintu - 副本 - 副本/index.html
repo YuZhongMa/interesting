@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Javasript拼图</title>
+    <style type="text/css">
+    *{
+        margin: 0;padding: 0;
+    }
+    .main{
+     position: relative;
+     top: 50px;
+     margin: 0 auto;
+     overflow: hidden; 
+     background:red;
+    }
+    li{
+        position: absolute;
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-box">
+        <ul class="main"></ul>
+    </div>
+</div>
+<script type="text/javascript">
+window.onload= function(){
+    var main = document.querySelector('.main');
+    init('images/01.jpg');    
+
+function init(url){  //初始化
+    //制作拼图
+    var img = new Image();
+    img.src = url;
+    var z_index = 1;
+    img.onload = function () {
+    var imgWidth,imgHeight,little_top,little_left ;
+    var img_arr = [],copy_imgarr=[];
+    var img_xy = [],imgxy_copy=[];
+    imgWidth_little = Math.floor(parseInt(img.width/4));
+    imgHeight_little = Math.floor(parseInt(img.height/4));
+    main.style.width = img.width + 'px';
+    main.style.height = img.height + 'px';
+    //循环生成小方块，用定位背景图的方式分割图片
+    for(var i =0;i<16;i++){
+        var img_little = document.createElement('li');
+        img_little.style.backgroundImage = 'url(' + url + ')';
+        img_little.style.width = imgWidth_little+"px";
+        img_little.style.height = imgHeight_little +"px";
+        img_little.style.overflow ="hidden";
+        if(i<4){
+            little_top = 0;
+            little_left = -i*imgWidth_little;
+        }else if(i>=4 && i<8){
+            little_top = -imgHeight_little;
+            little_left = -(i-4)*imgWidth_little;
+        }else if(i>=8 && i<12){
+            little_top = -imgHeight_little*2;
+            little_left = -(i-8)*imgWidth_little;
+        }else{
+            little_top = -imgHeight_little*3;
+            little_left = -(i-12)*imgWidth_little;
+        }
+
+        img_xy.push([i,little_left,little_top]);
+        imgxy_copy.push([i,little_left,little_top]);
+        img_little.style.backgroundPosition = little_left+'px'+' '+ little_top +'px';
+        img_little.id = i;
+        img_arr.push(img_little);
+        copy_imgarr.push(img_little);
+        //alert(-little_left)
+        img_little.style.left = -little_left +'px';
+        img_little.style.top = -little_top +'px';
+        main.appendChild(img_little);
+        img_little.onmousedown = mousedown;
+    }
+
+
+       //产生不重复的16随机数组
+    (function random(){ 
+        while (img_arr.length > 0) {
+            var ran_img = img_arr.splice(Math.random()*img_arr.length, 1);
+            var ran_xy  = img_xy.splice(Math.random()*img_xy.length, 1);
+            
+            startMove(ran_img[0],parseInt(-ran_xy[0][1]),parseInt(-ran_xy[0][2]),30)
+         }
+        })();
+            
+        //开始移动
+    function startMove(obj, newx, newy, time,fn) {
+        clearInterval(obj.timer);
+        if (!obj.timer) {
+            obj.timer = setInterval(function () {
+                move(obj, newx, newy);
+            }, time);
+        }
+    }
+        //改变坐标
+        function move(obj, newx, newy,fn) {
+        var oldx = parseInt(obj.style.left), oldy = parseInt(obj.style.top),
+                movex = (newx > oldx ? Math.ceil : Math.floor)((newx - oldx) / 10),
+                movey = (newy > oldy ? Math.ceil : Math.floor)((newy - oldy) / 10);
+        obj.style.left = (oldx + movex) + 'px';
+        obj.style.top = (oldy + movey) + 'px';
+        if (parseInt(obj.style.left) == newx && parseInt(obj.style.top) == newy) {
+            clearInterval(obj.timer);
+            if(fn){fn()}
+            obj.timer = null;
+        }
+    }
+
+    //拖拽
+    function mousedown(ev){
+        var ev= ev||event;
+        var x1 = ev.clientX -this.offsetLeft;
+        var y1 = ev.clientY -this.offsetTop;
+        var that =this;
+        var that_offsetLeft =that.offsetLeft;
+        var that_offsetTop =that.offsetTop;
+        z_index+=10
+        this.style.zIndex= z_index;
+
+        //console.log(this,x1,y1)
+        document.onmousemove= function(ev){        
+            var ev =ev||event;
+            that.style.left = ev.clientX - x1 + 'px';
+            that.style.top = ev.clientY - y1 + 'px';
+            var distobj = mindistance();
+            for(var i= 0;i<copy_imgarr.length;i++){
+                copy_imgarr[i].style.opacity = 1;
+            }
+            distobj.style.opacity = 0.5;
+
+           document.onmouseup = function(){
+           document.onmousemove = null;
+            startMove(distobj,that_offsetLeft,that_offsetTop,10);
+            startMove(that,distobj.offsetLeft,distobj.offsetTop,10);
+             distobj.style.opacity = 1;
+            }
+        }   
+        return false
+    }
+    
+
+        function mindistance(){
+        var ev = arguments.callee.caller.arguments[0] || window.event; 
+            var target = ev.target || ev.srcElement,
+                target_min =[],
+                dist = distance(target,copy_imgarr[0]);
+            for(var i=1;i<copy_imgarr.length;i++){
+                if(target.id !== copy_imgarr[i].id){
+                 if (target_min.length == 0) {
+                    target_min.push([copy_imgarr[0], dist]);
+                }
+                if(distance(target,copy_imgarr[i])<=dist){
+                    //alert(target,copy_imgarr[i])
+                    dist = distance(target,copy_imgarr[i]);
+                   target_min.splice(0, 1, [copy_imgarr[i],dist]);
+                }
+                }
+
+            }
+ 
+              return target_min[0][0]
+        }
+
+
+
+
+
+       function distance(obj1,obj2){
+        var a = (obj1.offsetLeft + obj1.offsetWidth / 2) - (obj2.offsetLeft + obj2.offsetWidth / 2);
+        var b = (obj1.offsetTop + obj1.offsetHeight / 2) - (obj2.offsetTop + obj2.offsetHeight / 2);
+        return Math.ceil(Math.sqrt(a * a + b * b));
+       } 
+    } //init
+}
+}
+</script>
+</body>
+</html>
