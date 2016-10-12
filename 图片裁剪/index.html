@@ -1,0 +1,158 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>原生JS实现图片裁剪图片剪切特效 - JS代码网</title>
+<meta name="keywords" content="JS代码,JS特效代码,jQuery特效,JS图片裁剪,JS图片剪切特效,JS裁剪图片" />
+<meta name="description" content="JS代码网提供jQuery插件、JS特效、JS图片裁剪插件的学习和下载" />
+<style type="text/css">
+.img_a{margin:0px auto; width:550px; height:420px; overflow:hidden; _position:relative;}
+.img_a .img_b{margin-right:130px; position:relative; width:420px; height:420px; _position:absolute; _top:0px; _left:0px;}
+.img_a .img_c{float:right; position:relative; width:120px; overflow:hidden; height:420px; _position:absolute; _top:0px; _left:430px;}
+.img_a .img_d{filter:alpha(opacity=60); opacity:0.6; background-color:#000; position:absolute; z-index:1;}
+.img_a .img_b img{max-height:420px; max-width:420px;}
+.img_a #img_b1{top:0px; left:0px; height:150px; width:420px;}
+.img_a #img_b2{left:0px; top:150px; width:150px; height:120px;}
+.img_a #img_b4{right:0px; top:150px; width:150px; height:120px;}
+.img_a #img_b5{bottom:0px; left:0px; height:150px; width:420px;}
+.img_a #img_b3{width:120px; height:120px; top:150px; left:150px; cursor:move; background:none;}
+.img_a #img_div{width:100%; height:100%; background-color:#FFF; filter:alpha(opacity=10); opacity:0.1;}
+
+.img_a .img_c_1,.img_a .img_c_2,.img_a .img_c_3{position:relative; background-color:#F5F5F5; overflow:hidden;}
+.img_a .img_c p{margin:0px; padding:0px; padding-bottom:10px; line-height:25px; color:#999; font-size:12px;}
+.img_a .img_c img{position:absolute; top:0px; left:0px;}
+.img_a .img_c_1{width:120px; height:120px;}
+
+.img_a .img_c_2{width:50px; height:50px;}
+
+.img_a .img_c_3{width:24px; height:24px;}
+
+.img_a #img_c1{height:120px; width:120px; background-color:#000; top:0px; left:0px; filter:alpha(opacity=1); opacity:0.01;}
+.img_a #img_c2{width:120px; top:120px; height:300px;}
+.img_a #img_c4{position:absolute;}
+.img_a #img_dsf{cursor:nw-resize; position:absolute; left:110px; top:110px; width:10px; height:10px; background-color:#004000; z-index:5px;}
+</style>
+</head>
+
+<body style="background-color:#111;">
+<div class="img_a">
+	<div class="img_c">
+        <div class="img_c_1">
+        	<img src="p/2.jpg" id="img_1">
+        </div>
+        <p>宽度*高度=120*120</p>
+        <div class="img_c_2">
+        	<img src="p/2.jpg" id="img_2">
+        </div>
+        <p>宽度*高度=50*50</p>
+        <div class="img_c_3">
+        	<img src="p/2.jpg" id="img_3">
+        </div>
+        <p>宽度*高度=24*24</p>
+    </div>
+	<div class="img_b" id="img_b">
+    	<div class="img_d" id="img_b1"></div>
+        <div class="img_d" id="img_b2"></div>
+        <div class="img_d" id="img_b3">
+        	<div id="img_div"></div>
+        	<div id="img_dsf"></div>
+        </div>
+        <div class="img_d" id="img_b4"></div>
+        <div class="img_d" id="img_b5"></div>
+        <img src="p/2.jpg" onload="img_sf(this);" height="420"></div>
+</div>
+<div style="text-align:center;margin-top:50px;color:#ffffff;font-size:14px"><a href="http://www.js-css.cn" style="color:#ffffff">JS代码网</a> 编辑整理</div>
+<script>
+function img_sf(simg){
+	var db=document.body;
+	var img1=document.getElementById('img_1');
+	var img2=document.getElementById('img_2');
+	var img3=document.getElementById('img_3');
+	var bl=[1,120/50,120/24];
+	var div=document.getElementById('img_b3');
+	var d_t=document.getElementById('img_b1');
+	var d_y=document.getElementById('img_b4');
+	var d_x=document.getElementById('img_b5');
+	var d_l=document.getElementById('img_b2');
+	var self={};
+	var iwh=Math.min(simg.height,simg.width);
+	var sf=document.getElementById('img_dsf');
+	hw();
+	yd(div.offsetTop,div.offsetLeft);
+	div.onmousedown=function(e){
+		var e=e||event;
+		self.x=e.clientX-this.offsetLeft;
+		self.y=e.clientY+document.documentElement.scrollTop-this.offsetTop;
+		try{e.preventDefault();}catch(o){e.returnValue = false;}
+		document.onmousemove=function(e){
+			var e=e||event;
+			var t=e.clientY+document.documentElement.scrollTop-self.y;
+			var l=e.clientX-self.x;
+			t=Math.max(t,0);
+			l=Math.max(l,0);
+			t=Math.min(t,simg.height-div.offsetHeight);
+			l=Math.min(l,simg.width-div.offsetWidth);
+			yd(t,l);
+		}
+	}
+	sf.onmousedown=div.onmouseup=function(){
+		document.onmousemove='';
+	}
+	
+	sf.onmousedown=function(e){
+		var e=e||event;
+		self.x=e.clientX-this.offsetLeft;
+		self.y=e.clientY+document.documentElement.scrollTop-this.offsetTop;
+		try{e.preventDefault();}catch(o){e.returnValue = false;}
+		try{e.stopPropagation();}catch(o){e.cancelBubble = true;}
+		document.onmousemove=function(e){
+			var e=e||event;
+			var t=e.clientY+document.documentElement.scrollTop-self.y;
+			var l=e.clientX-self.x;
+			l=Math.max(t,l);
+			l=l>iwh?iwh:l;
+			sff(l,l);
+		}
+	}
+	
+	function sff(t,l){
+		sf.style.top=t+'px';
+		sf.style.left=l+'px';
+		div.style.width=(l+10)+'px';
+		div.style.height=(t+10)+'px';
+		yd(div.offsetTop,div.offsetLeft);
+		var w=div.offsetWidth;
+		bl=[w/120,w/50,w/24];
+		hw();
+		db.imgh=l+10;
+	}
+	
+	function yd(t,l){
+		d_t.style.height=t+'px';
+		d_x.style.height=420-t-div.offsetHeight+'px';
+		d_l.style.top=d_y.style.top=div.style.top=t+'px';
+		d_l.style.width=div.style.left=l+'px';
+		d_y.style.width=420-l-div.offsetWidth+'px';
+		d_l.style.height=d_y.style.height=div.offsetHeight+'px';
+		img1.style.top=-t/bl[0]+'px';
+		img1.style.left=-l/bl[0]+'px';
+		img2.style.top=-t/bl[1]+'px';
+		img2.style.left=-l/bl[1]+'px';
+		img3.style.top=-t/bl[2]+'px';
+		img3.style.left=-l/bl[2]+'px';
+		db.xy=[t,l];
+	}
+	
+	function hw(){
+		img1.height=simg.height/bl[0];
+		img1.width=simg.width/bl[0];
+		img2.height=simg.height/bl[1];
+		img2.width=simg.width/bl[1];
+		img3.height=simg.height/bl[2];
+		img3.width=simg.width/bl[2];
+	}
+}
+</script>
+</body>
+</html>
+

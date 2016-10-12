@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+  <title>ngImgCrop Test Page</title>
+  <meta name="" content="" charset="utf-8">
+  <script type="text/javascript" src="./angular.js"></script>
+  <script type="text/javascript" src="./ng-img-crop.js"></script>
+  <script type="text/javascript" src="./fileup.js"></script>
+  <link rel="stylesheet" href="./ng-img-crop.css"/>
+  <style>
+    .cropArea {
+      background: #E4E4E4;
+      margin: auto;
+      overflow: hidden;
+    }
+    .cropArea.big {
+      width:800px;
+      height:600px;
+    }
+    .cropArea.medium {
+      width:500px;
+      height:350px;
+    }
+    .cropArea.small {
+      width:300px;
+      height:200px;
+    }
+  </style>
+</head>
+<body ng-controller="Ctrl">
+  <div>
+    <label><input type="checkbox" ng-model="enableCrop" ng-init="enableCrop=true"/> 是否预览</label>
+  </div>
+  <div>
+    <label>裁剪后大小<input type="text" ng-model="resImgSize" /></label>
+  </div>
+  <label for="uploadImage" class="label label-primary" ng-click="clearItems()">
+        选择图片
+        <input type="file" multiple="" id="uploadImage" accept="image/*" nv-file-select="" uploader="upload" style="display: none">
+    </label>
+  <div>
+    <button ng-click="resultImg()">上传</button>
+  </div>
+
+  <div ng-if="enableCrop" enableCrop=true class="cropArea small" >
+    <img-crop image="imageDataURI"
+              result-image="$parent.resImageDataURI"
+              change-on-fly="false"
+              area-type="square"
+              result-image-format="image/png"
+              result-image-size="resImgSize"
+              on-change="onChange($dataURI)"
+              on-load-begin="onLoadBegin()"
+              on-load-done="onLoadDone()"
+              on-load-error="onLoadError()"
+    >
+              <!--aspect-ratio="aspectRatio"-->
+  </div>
+
+  <div style="text-align:center">
+    <h3>Result</h3>
+    <div>
+      <img ng-src="{{resImageDataURI}}" />
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    angular.module('app',['ngImgCrop','angularFileUpload'])
+      .controller('Ctrl', function($scope,FileUploader) {
+        $scope.resImageDataURI='';
+        var newuploader = $scope.upload =  new FileUploader({
+            url: 'http://tms.xiaojukeji.com/api/public/upload'
+        });
+        $scope.clearItems = function(){
+          newuploader.clearQueue();
+        }
+        $scope.resultImg=function() {
+          newuploader.queue[0]._file =dataURLtoBlob($scope.resImageDataURI);
+          newuploader.uploadAll()
+        };
+        newuploader.onCompleteItem = (fileItem, response, status) => {
+          document.write('<a href='+response.url +' "email me">email me</a>')
+          console.log(response)
+        }
+        function dataURLtoBlob(dataurl) {
+            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+          return new Blob([u8arr], { type: mime });
+        }
+        //////////////////////////////////////////////////////////////////////////////////
+        
+        var handleFileSelect=function(evt) {
+          var file=evt.currentTarget.files[0];
+          var reader = new FileReader();
+          reader.onload = function (evt) {
+            $scope.$apply(function($scope){
+              $scope.imageDataURI=evt.target.result;
+            });
+          };
+          reader.readAsDataURL(file);
+        };
+        angular.element(document.querySelector('#uploadImage')).on('change',handleFileSelect);
+      });
+  </script>
+</body>
+</html>
