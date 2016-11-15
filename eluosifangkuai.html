@@ -19,7 +19,7 @@
 window.onload = function(){
   var cvs = document.getElementById('canvas1');
   var ctx = cvs.getContext("2d");
-  
+  console.log(ctx)
   var contarr = [];//主要数组
   var nowrect = [];//正在运动的方块
   var nextrect = [];//下一个方块
@@ -79,7 +79,7 @@ window.onload = function(){
     stop = true;
     //添加背景
     ctx.fillStyle = "#000000";
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = "#red";
     ctx.fillRect(0,0,450,600);
     ctx.clearRect(20,25,275,550);
     ctx.fillStyle = "#ffffff";
@@ -284,6 +284,7 @@ window.onload = function(){
   }
   //绘制主面板
   function contdraw(){
+    console.log(contarr.length)
     for(var i=0;i<contarr.length;i++){
       for(var j=0;j<contarr[i].length;j++){
         var wx = 20+(j*25);

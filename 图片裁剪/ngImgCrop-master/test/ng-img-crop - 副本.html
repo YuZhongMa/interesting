@@ -31,8 +31,11 @@
   <div>
     <label><input type="checkbox" ng-model="enableCrop" ng-init="enableCrop=true"/> 是否预览</label>
   </div>
-  <div>
+<!--   <div>
     <label>裁剪后大小<input type="text" ng-model="resImgSize" /></label>
+  </div> -->
+  <div>
+    <label>裁剪框大小<input type="text" ng-model="areaSize" /></label>
   </div>
   <label for="uploadImage" class="label label-primary">
         选择图片
@@ -42,18 +45,19 @@
     <button ng-click="resultImg()">上传</button>
   </div>
 
-  <div ng-if="enableCrop" enableCrop=true class="cropArea small" >
+  <div ng-if="enableCrop" enableCrop=true class="cropArea small" style="height: 400px;width: 400px">
     <img-crop image="imageDataURI"
               result-image="$parent.resImageDataURI"
               change-on-fly="false"
               area-type="square"
+              area-min-size="areaSize"
               result-image-format="image/png"
-              result-image-size="resImgSize"
+              result-image-size="areaSize"
               on-change="onChange($dataURI)"
               on-load-begin="onLoadBegin()"
               on-load-done="onLoadDone()"
               on-load-error="onLoadError()"
-    ></img-crop>
+    >
               <!--aspect-ratio="aspectRatio"-->
   </div>
 
@@ -67,17 +71,22 @@
   <script type="text/javascript">
     angular.module('app',['ngImgCrop','angularFileUpload'])
       .controller('Ctrl', function($scope,FileUploader) {
+        $scope.resImgSize=$scope.areaSize;
+        console.log($scope.areaSize)
         $scope.resImageDataURI='';
         var newuploader = $scope.upload =  new FileUploader({
             url: 'http://tms.xiaojukeji.com/api/public/upload'
         });
+        $scope.onChange=($dataURI)=>{
+          
+        }
         $scope.resultImg=function() {
           newuploader.queue[0]._file =dataURLtoBlob($scope.resImageDataURI);
           newuploader.uploadAll()
         };
         newuploader.onCompleteItem = (fileItem, response, status) => {
           document.write('<a href='+response.url +' "email me">email me</a>')
-          console.log(response)
+          console.log(fileItem)
         }
         function dataURLtoBlob(dataurl) {
             var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
